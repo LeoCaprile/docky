@@ -1,4 +1,4 @@
-package docker
+package types
 
 type Container struct {
 	ID      string   `json:"Id"`
