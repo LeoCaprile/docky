@@ -4,16 +4,15 @@ import (
 	"docky/models"
 	"encoding/json"
 	"fmt"
+	"github.com/charmbracelet/bubbles/table"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+	"github.com/dustin/go-humanize"
 	"log"
 	"net"
 	"net/http"
 	"os"
 	"time"
-
-	"github.com/charmbracelet/bubbles/table"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
-	"github.com/dustin/go-humanize"
 )
 
 var transport = &http.Transport{
@@ -27,6 +26,8 @@ func GetHttpClient() *http.Client {
 		Transport: transport,
 	}
 }
+
+type UpdateMsg = struct{}
 
 type model struct {
 	table table.Model
@@ -49,6 +50,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 
+	case UpdateMsg:
+		{
+			t := GetTableRows()
+			m.table.SetRows(t)
+			return m, nil
+		}
 	}
 
 	return m, nil
@@ -80,12 +87,27 @@ func getDockerContainers() ([]docker.Container, error) {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("NUMBER: %d", containers[0].Created)
-
 	return containers, nil
+
 }
 
-func main() {
+func GetTableRows() []table.Row {
+	containers, err := getDockerContainers()
+	if err != nil {
+		log.Fatal(err)
+	}
+	var rows []table.Row
+
+	for _, container := range containers {
+		naturalTime := humanize.Time(time.Unix(int64(container.Created), 0))
+		toInsertRow := table.Row{container.ID, container.Image, container.Command, naturalTime, container.Status, container.Names[0]}
+		rows = append(rows, toInsertRow)
+	}
+
+	return rows
+}
+
+func UpdateContainers() table.Model {
 	containers, err := getDockerContainers()
 
 	if err != nil {
@@ -124,10 +146,30 @@ func main() {
 		Bold(false)
 	t.SetStyles(s)
 
-	m := model{table: t}
+	return t
+}
 
-	if _, err := tea.NewProgram(m).Run(); err != nil {
-		fmt.Println("Error running program:", err)
+func getInitialModel() model {
+	t := UpdateContainers()
+	return model{table: t}
+}
+
+func updateTable(program *tea.Program) {
+	for {
+		time.Sleep(1000)
+		program.Send(UpdateMsg{})
+	}
+}
+
+func main() {
+
+	program := tea.NewProgram(getInitialModel())
+
+	go updateTable(program)
+
+	if _, err := program.Run(); err != nil {
+		fmt.Println("Error running programgetInitialModel", err)
 		os.Exit(1)
 	}
+
 }
