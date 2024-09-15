@@ -1,32 +1,18 @@
 package container
 
 import (
+	"docky/docker/client"
 	"docky/docker/types"
 	"encoding/json"
 	"fmt"
 	"log"
-	"net"
-	"net/http"
 )
 
 var baseURL = "http://v1.47"
-
-var transport = &http.Transport{
-	Dial: func(network, addr string) (net.Conn, error) {
-		return net.Dial("unix", "/var/run/docker.sock")
-	},
-}
-
-func getHttpClient() *http.Client {
-	return &http.Client{
-		Transport: transport,
-	}
-}
-
-var client = getHttpClient()
+var dockerClient = client.GetDockerHttpClient()
 
 func GetAll() ([]types.Container, error) {
-	res, err := client.Get(baseURL + "/containers/json?all=true")
+	res, err := dockerClient.Get(baseURL + "/containers/json?all=true")
 
 	if err != nil {
 		log.Fatal(err)
@@ -46,7 +32,7 @@ func GetAll() ([]types.Container, error) {
 }
 
 func Stop(containerId string) error {
-	res, err := client.Post(baseURL+"/containers/"+containerId+"/stop", "application/json", nil)
+	res, err := dockerClient.Post(baseURL+"/containers/"+containerId+"/stop", "application/json", nil)
 
 	if err != nil {
 		return fmt.Errorf("Couldn't make the request %w", err)
@@ -68,7 +54,7 @@ func Stop(containerId string) error {
 }
 
 func Start(containerId string) error {
-	res, err := client.Post(baseURL+"/containers/"+containerId+"/start", "application/json", nil)
+	res, err := dockerClient.Post(baseURL+"/containers/"+containerId+"/start", "application/json", nil)
 
 	if err != nil {
 		return fmt.Errorf("Couldn't make the request %w", err)
@@ -90,7 +76,7 @@ func Start(containerId string) error {
 }
 
 func Restart(containerId string) error {
-	res, err := client.Post(baseURL+"/containers/"+containerId+"/start", "application/json", nil)
+	res, err := dockerClient.Post(baseURL+"/containers/"+containerId+"/start", "application/json", nil)
 
 	if err != nil {
 		return fmt.Errorf("Couldn't make the request %w", err)

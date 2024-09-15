@@ -1,13 +1,16 @@
 package main
 
 import (
+	"docky/docker/client"
 	"docky/models"
 	"fmt"
-	tea "github.com/charmbracelet/bubbletea"
 	"os"
+
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 func main() {
+	client.TestConnection()
 
 	program := tea.NewProgram(models.GetInitialModel())
 
