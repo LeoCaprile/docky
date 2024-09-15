@@ -8,6 +8,8 @@ A Glamorous Docker client for the terminal!
 > 
 > PRs are welcome!
 
+Built with [Bubbletea](https://github.com/charmbracelet/bubbletea)
+
 ## Features list
 Here are the features that I wan't to achieve at first
 
